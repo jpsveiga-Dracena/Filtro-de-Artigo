@@ -3,10 +3,16 @@ import numpy as np
 import re
 
 # ── 1. Carregar CSV ──────────────────────────────────────────────────────────
-df = pd.read_csv('/home/sandbox/lens-export.csv', sep=';', encoding='utf-8-sig', low_memory=False)
+df = pd.read_csv('/workspace/publicacoes_ausentes_no_lens.csv', sep=',', encoding='utf-8-sig', low_memory=False)
 df.columns = df.columns.str.strip()
-df['Citing Works Count'] = pd.to_numeric(df['Citing Works Count'], errors='coerce').fillna(0).astype(int)
-df['Publication Year']   = pd.to_numeric(df['Publication Year'],   errors='coerce').fillna(2000).astype(int)
+# A nova lista possui metadados bibliograficos, mas nao abstract, palavras-chave ou citacoes.
+df['Title'] = df['title'].fillna('').astype(str)
+df['Author/s'] = df['authors'].fillna('').astype(str)
+df['Source Title'] = df['journal'].fillna('').astype(str)
+df['Publication Year'] = pd.to_numeric(df['year'], errors='coerce').fillna(2000).astype(int)
+df['Citing Works Count'] = 0
+for c in ['Abstract','Keywords','Fields of Study']:
+    df[c] = ''
 
 def txt(row):
     return ' '.join([
@@ -264,9 +270,9 @@ df_qual['_score'] = (
     0.20 * (df_qual['_rel'] / max_rel)
 )
 
-df_top = df_qual.sort_values('_score', ascending=False).head(57).copy()
+df_top = df_qual.sort_values('_score', ascending=False).copy()
 print(f"\n{'='*95}")
-print(f"TOP 57 ARTIGOS FINAIS")
+print(f"TODOS OS ARTIGOS POSITIVOS")
 print(f"{'='*95}")
 
 for i, (_, row) in enumerate(df_top.iterrows(), 1):
@@ -300,7 +306,7 @@ for col in df_out.columns:
     df_out[col] = df_out[col].fillna('N/D').astype(str).str.strip()
     df_out[col] = df_out[col].replace({'nan': 'N/D', '': 'N/D'})
 
-OUT_PATH = '/home/sandbox/top57_foss4g_agricultura.csv'
+OUT_PATH = '/workspace/todas_publicacoes_positivas.csv'
 df_out.to_csv(OUT_PATH, index=False, encoding='utf-8-sig', sep=';')
 print(f"\nCSV salvo em: {OUT_PATH}")
 print(f"Colunas: {list(df_out.columns)}")
